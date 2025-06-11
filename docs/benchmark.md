@@ -24,7 +24,6 @@ Percentage Reduction = ((Value from test-gitops - Value from optimized-gitops) /
 | **Go Routines** | ~81% Reduction |
 | **CPU Usage** | ~66% Reduction |
 | **Watch API Resource Objects** | ~33% Reduction |
-| **Memory Allocation** | ~30% Reduction |
 | **Watch API Resources** | ~90% Reduction |
 | **Heap In-Use** | ~25% Reduction |
 | **Heap Memory Allocation** | ~30% Reduction |
@@ -47,22 +46,17 @@ Result: ~66% reduction
 Measures the number of API resource objects being watched by the controller.  
 Result: ~33% reduction
 
-4. Memory Allocation  
-![Memory Allocation](images/go_memstats_alloc_bytes.png)  
-Total bytes of memory allocated for heap objects.  
-Result: ~30% reduction
-
-5. Watch API Resources  
+4. Watch API Resources  
 ![Watch API Resources](images/argocd_cluster_api_resources.png)  
 Measures the number of distinct API resources being watched.  
 Result: ~90% reduction
 
-6. Heap Memory In-Use  
+5. Heap Memory In-Use  
 ![Heap Memory In-Use](images/go_memstats_heap_inuse_bytes.png)  
 Bytes in in-use spans.  
 Result: ~25% reduction
 
-7. Heap Memory Allocation  
+6. Heap Memory Allocation  
 ![Heap Memory Allocation](images/go_memstats_heap_alloc_bytes.png)  
 Bytes of memory allocated from the heap.  
 Result: ~30% reduction
