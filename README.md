@@ -57,7 +57,7 @@ By preventing Argo CD from tracking non-essential resources, this controller ach
 
 These optimizations allow your Argo CD instance to run faster, handle more applications, and consume fewer cluster resources.
 
-**See the full [Performance Benchmarks](docs/BENCHMARKS.md) for detailed information.**
+**See the full [Performance Benchmarks](docs/benchmark.md) for detailed information.**
 
 ## Installation & Usage
 
