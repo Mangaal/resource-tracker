@@ -38,31 +38,31 @@ Measures the number of running goroutines, indicating a reduction in concurrent 
 Result: ~81% reduction
 
 2. CPU Usage  
-![CPU Usage](images/cpu_usage.png)  
+![CPU Usage](images/process_cpu_seconds_total.png)  
 Measures the rate of total CPU time spent by the process.  
 Result: ~66% reduction
 
 3. Watch API Resource Objects  
-![Watch API Resource Objects](images/watch_api_resource_objects.png)  
+![Watch API Resource Objects](images/argocd_cluster_api_resource_objects.png)  
 Measures the number of API resource objects being watched by the controller.  
 Result: ~33% reduction
 
 4. Memory Allocation  
-![Memory Allocation](images/memory_allocation.png)  
+![Memory Allocation](images/go_memstats_alloc_bytes.png)  
 Total bytes of memory allocated for heap objects.  
 Result: ~30% reduction
 
 5. Watch API Resources  
-![Watch API Resources](images/watch_api_resources.png)  
+![Watch API Resources](images/argocd_cluster_api_resources.png)  
 Measures the number of distinct API resources being watched.  
 Result: ~90% reduction
 
 6. Heap Memory In-Use  
-![Heap Memory In-Use](images/heap_in_use.png)  
+![Heap Memory In-Use](images/go_memstats_heap_inuse_bytes.png)  
 Bytes in in-use spans.  
 Result: ~25% reduction
 
 7. Heap Memory Allocation  
-![Heap Memory Allocation](images/heap_memory_allocation.png)  
+![Heap Memory Allocation](images/go_memstats_heap_alloc_bytes.png)  
 Bytes of memory allocated from the heap.  
 Result: ~30% reduction
