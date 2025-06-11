@@ -44,6 +44,21 @@ Static configuration settings like resource.inclusions and resource.exclusions r
 
 * Reduced operational overhead: Eliminates the need for manual resource inclusion configuration.
 
+## Performance Highlights
+
+By preventing Argo CD from tracking non-essential resources, this controller achieves significant performance improvements. Our tests show dramatic reductions across key metrics compared to a standard Argo CD installation.
+
+| Metric | Improvement |
+| :--- | :--- |
+| **Go Routines** | ~81% Reduction |
+| **CPU Usage** | ~66% Reduction |
+| **API Resource Objects** | ~33% Reduction |
+| **Memory Allocation** | ~30% Reduction |
+
+These optimizations allow your Argo CD instance to run faster, handle more applications, and consume fewer cluster resources.
+
+**See the full [Performance Benchmarks](docs/BENCHMARKS.md) for detailed information.**
+
 ## Installation & Usage
 
 See [doc](docs/installation.md) for installation and usage instructions.
