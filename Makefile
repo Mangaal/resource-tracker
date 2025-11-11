@@ -42,6 +42,12 @@ build:
 	CGO_ENABLED=0 GOOS=${OS} GOARCH=${ARCH} go build -ldflags "${LDFLAGS}" -o ${OUTDIR}/${BINNAME} cmd/*.go
 	CGO_ENABLED=0 GOOS=${OS} GOARCH=${ARCH} go build -ldflags "${LDFLAGS}" -o ${OUTDIR}/${BINNAME}-operator operator/*.go
 
+.PHONY: build-plugin
+build-plugin:
+	mkdir -p ${OUTDIR}
+	CGO_ENABLED=0 GOOS=${OS} GOARCH=${ARCH} go build -ldflags "${LDFLAGS}" -o ${OUTDIR}/argocd-resource-tracker cmd/*.go
+
+
 .PHONY: test
 test:
 	go test -coverprofile coverage.out `go list ./... | grep -vE '(test|mocks|vendor)'`

@@ -4,6 +4,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/anandf/resource-tracker/cmd/tracker"
 	"github.com/anandf/resource-tracker/pkg/argocd"
 	"github.com/spf13/cobra"
 )
@@ -24,11 +25,13 @@ type ResourceTrackerConfig struct {
 func newRootCommand() error {
 	var rootCmd = &cobra.Command{
 		Use:   "argocd-resource-tracker",
-		Short: "Dynamically update resource.inclusions based on the resources managed by Argo Applications",
+		Short: "ArgoCD Resource Tracker Plugin - Analyze resource relationships and dependencies",
+		Long:  "ArgoCD Resource Tracker Plugin provides deep analysis of resource relationships and dependencies for ArgoCD applications using graph-based analysis",
 	}
 	rootCmd.AddCommand(newRunCommand())
 	rootCmd.AddCommand(newRunQueryCommand())
 	rootCmd.AddCommand(newVersionCommand())
+	rootCmd.AddCommand(tracker.NewResourceTrackerCommand())
 	err := rootCmd.Execute()
 	return err
 }

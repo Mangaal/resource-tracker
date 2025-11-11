@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/anandf/resource-tracker/pkg/argocd"
-	"github.com/argoproj/argo-cd/v2/common"
-	"github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
+	"github.com/argoproj/argo-cd/v3/common"
+	"github.com/argoproj/argo-cd/v3/pkg/apis/application/v1alpha1"
 	"github.com/emirpasic/gods/sets/hashset"
 	log "github.com/sirupsen/logrus"
 

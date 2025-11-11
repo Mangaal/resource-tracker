@@ -21,11 +21,12 @@ import (
 )
 
 type ResourceMapper struct {
-	DiscoveryClient discovery.DiscoveryInterface
-	InformerFactory apiextensionsinformer.SharedInformerFactory
-	ResourceList    hashset.Set
-	CRDInformer     cache.SharedInformer
-	DynamicClient   dynamic.Interface
+	DiscoveryClient        discovery.DiscoveryInterface
+	InformerFactory        apiextensionsinformer.SharedInformerFactory
+	ResourceList           hashset.Set
+	CRDInformer            cache.SharedInformer
+	DynamicClient          dynamic.Interface
+	ClusterScopedResources hashset.Set
 }
 
 func NewResourceMapper(destinationConfig *rest.Config) (*ResourceMapper, error) {
@@ -53,11 +54,12 @@ func NewResourceMapper(destinationConfig *rest.Config) (*ResourceMapper, error) 
 	}
 
 	rm := &ResourceMapper{
-		DiscoveryClient: discoveryClient,
-		DynamicClient:   dynamicClient,
-		InformerFactory: informerFactory,
-		CRDInformer:     crdInformer,
-		ResourceList:    *hashset.New(),
+		DiscoveryClient:        discoveryClient,
+		DynamicClient:          dynamicClient,
+		InformerFactory:        informerFactory,
+		CRDInformer:            crdInformer,
+		ResourceList:           *hashset.New(),
+		ClusterScopedResources: *hashset.New(),
 	}
 
 	if err := rm.Init(); err != nil {
@@ -96,8 +98,13 @@ func (r *ResourceMapper) addToResourceList(obj interface{}) {
 		if !version.Served {
 			continue // Skip versions that are not served
 		}
+
 		// Check if the CRD is namespaced
 		if !(crd.Spec.Scope == apiextensionsv1.NamespaceScoped) {
+			gv := fmt.Sprintf("%s/%s", crd.Spec.Group, version.Name)
+			key := kube.GetResourceKey(gv, crd.Spec.Names.Kind)
+			log.Infof("Adding cluster scoped resource: %s", key)
+			r.ClusterScopedResources.Add(key)
 			continue
 		}
 
@@ -106,14 +113,16 @@ func (r *ResourceMapper) addToResourceList(obj interface{}) {
 			Version:  version.Name,
 			Resource: crd.Spec.Names.Plural, // CRD resources are named using the `plural` field
 		}
+
 		// Log whether we're updating or adding a new CRD version
 		if r.ResourceList.Contains(gvr) {
 			log.Debugf("Updating existing CRD version: %s/%s (%s)", gvr.Group, gvr.Version, gvr.Resource)
 		} else {
 			log.Infof("Adding new CRD version: %s/%s (%s)", gvr.Group, gvr.Version, gvr.Resource)
 		}
-		// Add the served version of CRD to ResourceList
+
 		r.ResourceList.Add(gvr)
+		// Add the served version of CRD to ResourceList
 	}
 }
 
@@ -128,11 +137,19 @@ func (r *ResourceMapper) Init() error {
 	}
 	for _, resourceGroup := range resourceList {
 		for _, resource := range resourceGroup.APIResources {
-			if !resource.Namespaced { // Skip non-namespaced resources
-				continue
-			}
 			gv, err := schema.ParseGroupVersion(resourceGroup.GroupVersion)
 			if err != nil {
+				continue
+			}
+			// Record cluster-scoped kinds for quick detection
+			if !resource.Namespaced {
+				groupVersion := gv.Version
+				if gv.Group != "" {
+					groupVersion = fmt.Sprintf("%s/%s", gv.Group, gv.Version)
+				}
+				key := kube.GetResourceKey(groupVersion, resource.Kind)
+				r.ClusterScopedResources.Add(key)
+				// Skip adding to ResourceList, since we only scan namespaced kinds
 				continue
 			}
 			gvr := schema.GroupVersionResource{
