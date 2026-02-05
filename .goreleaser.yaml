@@ -1,0 +1,88 @@
+version: 2
+
+# CLI-only release configuration (modeled after Argo CD, but adapted for this repo)
+project_name: argocd-resource-tracker
+
+before:
+  hooks:
+    - go mod download
+
+builds:
+  - id: resource-tracker-cli
+    main: ./cmd
+    binary: argocd-resource-tracker-{{ .Os }}-{{ .Arch }}
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -w -s
+      - -X main.Version={{ .Version }}
+      - -X main.BuildDate={{ .Date }}
+      - -X main.GitCommit={{ .FullCommit }}
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+      - s390x
+      - ppc64le
+    ignore:
+      - goos: darwin
+        goarch: s390x
+      - goos: darwin
+        goarch: ppc64le
+      - goos: windows
+        goarch: s390x
+      - goos: windows
+        goarch: ppc64le
+      - goos: windows
+        goarch: arm64
+
+archives:
+  - id: argocd-resource-tracker-archive
+    ids:
+      - resource-tracker-cli
+    # "binary" format means no tar/zip; GoReleaser will publish the raw binaries.
+    formats: [binary]
+    name_template: |-
+      {{ .ProjectName }}-{{ .Os }}_{{ .Arch }}
+
+checksum:
+  name_template: 'checksums.txt'
+  algorithm: sha256
+
+release:
+  prerelease: auto
+  draft: false
+
+changelog:
+  use: github
+  sort: asc
+  abbrev: 0
+  groups: # Regex use RE2 syntax as defined here: https://github.com/google/re2/wiki/Syntax.
+    - title: 'Breaking Changes'
+      regexp: '^.*?(\([[:word:]]+\))??!:.+$'
+      order: 0
+    - title: 'Features'
+      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
+      order: 100
+    - title: 'Bug fixes'
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+      order: 200
+    - title: 'Documentation'
+      regexp: '^.*?docs(\([[:word:]]+\))??!?:.+$'
+      order: 300
+    - title: 'Dependency updates'
+      regexp: '^.*?(feat|fix|chore)\(deps?.+\)!?:.+$'
+      order: 400
+    - title: 'Other work'
+      order: 999
+  filters:
+    exclude:
+      - '^test:'
+      - '^.*?Bump(\([[:word:]]+\))?.+$'
+      - '^.*?\[Bot\](\([[:word:]]+\))?.+$'
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json

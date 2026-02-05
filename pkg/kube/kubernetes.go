@@ -37,6 +37,11 @@ func NewKubernetesClient(ctx context.Context, client kubernetes.Interface, names
 // NewKubernetesClientFromConfig creates a new Kubernetes client object from given
 // rest.Config object.
 func NewKubernetesClientFromConfig(ctx context.Context, namespace string, kubeConfig *rest.Config) (*ResourceTrackerKubeClient, error) {
+	// Default namespace if caller doesn't provide one. This mirrors kubectl/client-go
+	// behavior and keeps callers/tests predictable.
+	if namespace == "" {
+		namespace = "default"
+	}
 	clientset, err := kubernetes.NewForConfig(kubeConfig)
 	if err != nil {
 		return nil, err
@@ -176,7 +181,7 @@ func RestConfigFromCluster(c *v1alpha1.Cluster, kubeconfigPath string) (*rest.Co
 	cfg.Timeout = v1alpha1.K8sServerSideTimeout
 	cfg.QPS = v1alpha1.K8sClientConfigQPS
 	cfg.Burst = v1alpha1.K8sClientConfigBurst
-	v1alpha1.SetK8SConfigDefaults(cfg)
+	_ = v1alpha1.SetK8SConfigDefaults(cfg)
 
 	return cfg, nil
 }

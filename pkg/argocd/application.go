@@ -153,14 +153,14 @@ func (a *argocd) UpdateResourceInclusions(gvr *schema.GroupVersionResource, reso
 	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		resource, err := a.dynamicClient.Resource(*gvr).Namespace(resourceNamespace).Get(ctx, resourceName, metav1.GetOptions{})
 		if err != nil {
-			return fmt.Errorf("error fetching ConfigMap: %v", err)
+			return fmt.Errorf("error fetching ConfigMap: %w", err)
 		}
 
 		if err := unstructured.SetNestedField(resource.Object, resourceInclusionYaml, getResourceInclusionsHierarchy(gvr)...); err != nil {
-			return fmt.Errorf("failed to set resource.inclusions value: %v", err)
+			return fmt.Errorf("failed to set resource.inclusions value: %w", err)
 		}
 		if err := unstructured.SetNestedField(resource.Object, "", getResourceExclusionsHierarchy(gvr)...); err != nil {
-			return fmt.Errorf("failed to set resource.inclusions value: %v", err)
+			return fmt.Errorf("failed to set resource.exclusions value: %w", err)
 		}
 		// exclude all resources that are not explicitly excluded.
 		unstructured.RemoveNestedField(resource.Object, "data", "resource.exclusions")
@@ -180,7 +180,7 @@ func (a *argocd) UpdateResourceInclusions(gvr *schema.GroupVersionResource, reso
 func (a *argocd) GetCurrentResourceInclusions(gvr *schema.GroupVersionResource, resourceName, resourceNamespace string) (string, error) {
 	argocdCM, err := a.dynamicClient.Resource(*gvr).Namespace(resourceNamespace).Get(context.Background(), resourceName, metav1.GetOptions{})
 	if err != nil {
-		return "", fmt.Errorf("error fetching ConfigMap: %v", err)
+		return "", fmt.Errorf("error fetching ConfigMap: %w", err)
 	}
 	resourceInclusionsYaml, found, err := unstructured.NestedString(argocdCM.Object, getResourceInclusionsHierarchy(gvr)...)
 	if err != nil {
