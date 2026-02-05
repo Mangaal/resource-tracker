@@ -132,7 +132,7 @@ func NewResourceMapper(destinationConfig *rest.Config) (*ResourceMapper, error) 
 	}
 
 	// Set up event handlers
-	crdInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, err = crdInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: rm.addToResourceList,
 		UpdateFunc: func(oldObj, newObj interface{}) {
 			oldCRD, ok1 := oldObj.(*apiextensionsv1.CustomResourceDefinition)
@@ -149,6 +149,9 @@ func NewResourceMapper(destinationConfig *rest.Config) (*ResourceMapper, error) 
 			rm.addToResourceList(newObj)
 		},
 	})
+	if err != nil {
+		return nil, fmt.Errorf("Failed to add CRD event handler: %w", err)
+	}
 	return rm, nil
 }
 

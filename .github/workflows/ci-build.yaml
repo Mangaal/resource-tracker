@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   lint:
-    name: Lint
+    name: Lint Go code
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -44,7 +44,7 @@ jobs:
           args: --verbose
 
   test:
-    name: Test
+    name: Run unit tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

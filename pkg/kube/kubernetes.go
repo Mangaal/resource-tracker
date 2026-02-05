@@ -181,7 +181,7 @@ func RestConfigFromCluster(c *v1alpha1.Cluster, kubeconfigPath string) (*rest.Co
 	cfg.Timeout = v1alpha1.K8sServerSideTimeout
 	cfg.QPS = v1alpha1.K8sClientConfigQPS
 	cfg.Burst = v1alpha1.K8sClientConfigBurst
-	v1alpha1.SetK8SConfigDefaults(cfg)
+	_ = v1alpha1.SetK8SConfigDefaults(cfg)
 
 	return cfg, nil
 }

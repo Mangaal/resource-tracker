@@ -228,6 +228,6 @@ func analyzeWithDynamicTracker(
 		})
 	}
 	// Wait for all workers to complete.
-	g.Wait()
+	_ = g.Wait()
 	return appChildren
 }
