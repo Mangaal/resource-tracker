@@ -6,13 +6,8 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/anandf/resource-tracker/pkg/common"
-	"github.com/anandf/resource-tracker/pkg/graph"
-	"github.com/anandf/resource-tracker/pkg/kube"
-	"github.com/anandf/resource-tracker/pkg/repo"
 	"github.com/argoproj/argo-cd/v3/pkg/apis/application/v1alpha1"
 	"github.com/argoproj/argo-cd/v3/pkg/client/clientset/versioned"
-	"github.com/argoproj/argo-cd/v3/util/argo"
 	"github.com/argoproj/argo-cd/v3/util/db"
 	"github.com/argoproj/argo-cd/v3/util/settings"
 	log "github.com/sirupsen/logrus"
@@ -22,6 +17,11 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/util/retry"
+
+	"github.com/anandf/resource-tracker/pkg/common"
+	"github.com/anandf/resource-tracker/pkg/graph"
+	"github.com/anandf/resource-tracker/pkg/kube"
+	"github.com/anandf/resource-tracker/pkg/repo"
 )
 
 const (
@@ -35,9 +35,9 @@ type ArgoCD interface {
 	GetApplication(name string) (*v1alpha1.Application, error)
 	GetAppProject(app *v1alpha1.Application) (*v1alpha1.AppProject, error)
 	GetApplicationClusterServerByName(ctx context.Context, clusterName string) (string, error)
-	GetResourcesFromApplicationStatus(ctx context.Context, application *v1alpha1.Application) ([]*common.ResourceInfo, error)
+	GetResourcesFromApplicationStatus(application *v1alpha1.Application) ([]*common.ResourceInfo, error)
 	GetAllMissingResources() ([]*common.ResourceInfo, error)
-	GetApplicationChildManifests(ctx context.Context, application *v1alpha1.Application, kubeconfig string, server string) ([]*common.ResourceInfo, error)
+	GetApplicationChildManifests(ctx context.Context, application *v1alpha1.Application) ([]*common.ResourceInfo, error)
 	GetTrackingMethod() (string, error)
 	GetAppCluster(ctx context.Context, server string) (*v1alpha1.Cluster, error)
 	GetCurrentResourceInclusions(gvr *schema.GroupVersionResource, resourceName, resourceNamespace string) (string, error)
@@ -50,8 +50,6 @@ type argocd struct {
 	kubeClient           *kube.KubeClient
 	dynamicClient        dynamic.Interface
 	applicationClientSet versioned.Interface
-	queryServers         map[string]*graph.QueryServer
-	trackingMethod       v1alpha1.TrackingMethod
 	repoServerManager    *repo.RepoServerManager
 	settingsManager      *settings.SettingsManager
 	applicationNamespace string
@@ -64,12 +62,6 @@ func NewArgoCD(config *rest.Config, argocdNS string, applicationNS string, repoS
 	if err != nil {
 		return nil, fmt.Errorf("could not create K8s client: %w", err)
 	}
-	qsMap := make(map[string]*graph.QueryServer)
-	qs, err := graph.NewQueryServer(config, graph.TrackingMethodLabel, false)
-	if err != nil {
-		return nil, fmt.Errorf("could not create query server: %w", err)
-	}
-	qsMap[config.Host] = qs
 	settingsMgr := settings.NewSettingsManager(context.Background(), resourceTrackerConfig.KubeClient.Clientset, argocdNS)
 	dynamicClient, err := dynamic.NewForConfig(config)
 	if err != nil {
@@ -84,8 +76,6 @@ func NewArgoCD(config *rest.Config, argocdNS string, applicationNS string, repoS
 		kubeClient:           resourceTrackerConfig.KubeClient,
 		dynamicClient:        dynamicClient,
 		applicationClientSet: resourceTrackerConfig.ApplicationClientSet,
-		queryServers:         qsMap,
-		trackingMethod:       argo.GetTrackingMethod(settingsMgr),
 		settingsManager:      settingsMgr,
 		repoServerManager:    repoServerManager,
 		applicationNamespace: applicationNS,
@@ -199,10 +189,7 @@ func getMissingResources(obj *v1alpha1.Application) ([]*common.ResourceInfo, err
 	if err != nil {
 		return nil, err
 	}
-	missingResources, err := getResourcesFromConditions(conditions)
-	if err != nil {
-		return nil, err
-	}
+	missingResources := getResourcesFromConditions(conditions)
 	return missingResources, nil
 }
 
@@ -229,7 +216,7 @@ func getExcludedResourceConditions(statusConditions []v1alpha1.ApplicationCondit
 
 // getResourcesFromConditions returns the resources that are missing to be managed reported in status.conditions
 // of an Argo CD Application
-func getResourcesFromConditions(conditions []metav1.Condition) ([]*common.ResourceInfo, error) {
+func getResourcesFromConditions(conditions []metav1.Condition) []*common.ResourceInfo {
 	regex := regexp.MustCompile(ExcludedResourceWarningMsgPattern)
 	results := make([]*common.ResourceInfo, 0, len(conditions))
 	for _, condition := range conditions {
@@ -250,10 +237,10 @@ func getResourcesFromConditions(conditions []metav1.Condition) ([]*common.Resour
 			}
 		}
 	}
-	return results, nil
+	return results
 }
 
-func (a *argocd) GetResourcesFromApplicationStatus(ctx context.Context, application *v1alpha1.Application) ([]*common.ResourceInfo, error) {
+func (a *argocd) GetResourcesFromApplicationStatus(application *v1alpha1.Application) ([]*common.ResourceInfo, error) {
 	missingResources, err := getMissingResources(application)
 	if err != nil {
 		return nil, fmt.Errorf("error getting missing resources: %w", err)
@@ -315,12 +302,12 @@ func (a *argocd) GetAppCluster(ctx context.Context, server string) (*v1alpha1.Cl
 	return cluster, nil
 }
 
-func (a *argocd) GetApplicationChildManifests(ctx context.Context, application *v1alpha1.Application, kubeconfig string, server string) ([]*common.ResourceInfo, error) {
+func (a *argocd) GetApplicationChildManifests(ctx context.Context, application *v1alpha1.Application) ([]*common.ResourceInfo, error) {
 	appProject, err := a.GetAppProject(application)
 	if err != nil {
 		return nil, fmt.Errorf("error getting app project: %w", err)
 	}
-	childManifests, err := a.repoServerManager.GetApplicationChildManifests(ctx, application, appProject, kubeconfig)
+	childManifests, err := a.repoServerManager.GetApplicationChildManifests(ctx, application, appProject)
 	if err != nil {
 		return nil, fmt.Errorf("error getting child manifests: %w", err)
 	}

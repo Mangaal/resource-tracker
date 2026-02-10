@@ -63,7 +63,7 @@ func GetKubeConfig(kubeconfigPath string) (*rest.Config, error) {
 
 	restConfig, err := rest.InClusterConfig()
 	if err != nil && !errors.Is(err, rest.ErrNotInCluster) {
-		return nil, fmt.Errorf("failed to create config: %v", err)
+		return nil, fmt.Errorf("failed to create config: %w", err)
 	}
 
 	// If the binary is not being run inside a kubernetes cluster,
@@ -77,7 +77,7 @@ func GetKubeConfig(kubeconfigPath string) (*rest.Config, error) {
 		kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
 		restConfig, err = kubeConfig.ClientConfig()
 		if err != nil {
-			return nil, fmt.Errorf("failed to create config: %v", err)
+			return nil, fmt.Errorf("failed to create config: %w", err)
 		}
 	}
 	return restConfig, nil
@@ -99,7 +99,7 @@ func RestConfigFromCluster(c *v1alpha1.Cluster, kubeconfigPath string) (*rest.Co
 	if strings.Contains(c.Server, "kubernetes.default.svc") {
 		localCfg, err := rest.InClusterConfig()
 		if err != nil && !errors.Is(err, rest.ErrNotInCluster) {
-			return nil, fmt.Errorf("failed to create config: %v", err)
+			return nil, fmt.Errorf("failed to create config: %w", err)
 		}
 		if localCfg == nil {
 			if kubeconfigPath != "" {
@@ -116,7 +116,6 @@ func RestConfigFromCluster(c *v1alpha1.Cluster, kubeconfigPath string) (*rest.Co
 		}
 		cfg = localCfg
 	} else {
-
 		switch {
 		case c.Config.AWSAuthConfig != nil:
 			// EKS via argocd-k8s-auth (same contract as Argo CD)

@@ -11,34 +11,28 @@ import (
 	"github.com/argoproj/argo-cd/v3/util/db"
 	"github.com/argoproj/argo-cd/v3/util/env"
 	"github.com/argoproj/argo-cd/v3/util/io"
-	kubeutil "github.com/argoproj/argo-cd/v3/util/kube"
 	"github.com/argoproj/argo-cd/v3/util/settings"
 	"github.com/argoproj/argo-cd/v3/util/tls"
-	"github.com/argoproj/gitops-engine/pkg/utils/kube"
 	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
-type clusterAPIDetails struct {
-	APIVersions  string
-	APIResources []kube.APIResourceInfo
-}
-
 type RepoServerManager struct {
 	db            db.ArgoDB
 	settingsMgr   *settings.SettingsManager
 	repoClientset apiclient.Clientset
-	kubectl       kube.Kubectl
-	controllerNS  string
 }
 
-func NewRepoServerManager(kubeConfig *rest.Config,
-	controllerNamespace string, repoServerAddress string,
+func NewRepoServerManager(
+	kubeConfig *rest.Config,
+	controllerNamespace string,
+	repoServerAddress string,
 	repoServerTimeoutSeconds int,
 	repoServerPlaintext bool,
-	repoServerStrictTLS bool) (*RepoServerManager, error) {
+	repoServerStrictTLS bool,
+) (*RepoServerManager, error) {
 	clientSet, err := kubernetes.NewForConfig(kubeConfig)
 	if err != nil {
 		return nil, err
@@ -50,9 +44,10 @@ func NewRepoServerManager(kubeConfig *rest.Config,
 		StrictValidation: repoServerStrictTLS,
 	}
 	if !tlsConfig.DisableTLS && tlsConfig.StrictValidation {
+		appConfigPath := env.StringFromEnv(common.EnvAppConfigPath, common.DefaultAppConfigPath)
 		pool, err := tls.LoadX509CertPool(
-			fmt.Sprintf("%s/reposerver/tls/tls.crt", env.StringFromEnv(common.EnvAppConfigPath, common.DefaultAppConfigPath)),
-			fmt.Sprintf("%s/reposerver/tls/ca.crt", env.StringFromEnv(common.EnvAppConfigPath, common.DefaultAppConfigPath)),
+			appConfigPath+"/reposerver/tls/tls.crt",
+			appConfigPath+"/reposerver/tls/ca.crt",
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load tls certs: %w", err)
@@ -60,18 +55,15 @@ func NewRepoServerManager(kubeConfig *rest.Config,
 		tlsConfig.Certificates = pool
 	}
 	repoClientset := apiclient.NewRepoServerClientset(repoServerAddress, repoServerTimeoutSeconds, tlsConfig)
-	kubectl := kubeutil.NewKubectl()
 	return &RepoServerManager{
 		db:            dbInstance,
 		settingsMgr:   settingsMgr,
 		repoClientset: repoClientset,
-		kubectl:       kubectl,
-		controllerNS:  controllerNamespace,
 	}, nil
 }
 
 // GetApplicationChildManifests fetches manifests and filters direct child resources
-func (r *RepoServerManager) GetApplicationChildManifests(ctx context.Context, application *appsv1alpha1.Application, proj *appsv1alpha1.AppProject, kubeconfig string) ([]*unstructured.Unstructured, error) {
+func (r *RepoServerManager) GetApplicationChildManifests(ctx context.Context, application *appsv1alpha1.Application, proj *appsv1alpha1.AppProject) ([]*unstructured.Unstructured, error) {
 	// Fetch Helm repositories
 	helmRepos, err := r.db.ListHelmRepositories(ctx)
 	if err != nil {
