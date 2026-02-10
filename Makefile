@@ -45,11 +45,6 @@ clean:
 
 .PHONY: mod-tidy
 mod-tidy:
-	go mod tidy
-
-.PHONY: mod-download
-mod-download:
-	go mod download
 
 .PHONY: build
 build:
@@ -58,9 +53,6 @@ build:
 
 .PHONY: test
 test:
-	go test -coverprofile coverage.out `go list ./... | grep -vE '(test|mocks|vendor)'`
-
-.PHONY: lint
 lint:
 	golangci-lint run
 

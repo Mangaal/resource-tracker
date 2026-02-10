@@ -1,6 +1,5 @@
 version: 2
 
-# CLI-only release configuration (modeled after Argo CD, but adapted for this repo)
 project_name: argocd-resource-tracker
 
 before:
@@ -85,4 +84,3 @@ changelog:
       - '^test:'
       - '^.*?Bump(\([[:word:]]+\))?.+$'
       - '^.*?\[Bot\](\([[:word:]]+\))?.+$'
-# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
