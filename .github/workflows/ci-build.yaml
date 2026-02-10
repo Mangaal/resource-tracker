@@ -73,4 +73,8 @@ jobs:
           cache: true
 
       - name: Build CLI
+<<<<<<< HEAD
         run: make build
+=======
+        run: make build
+>>>>>>> 9ad79ba9b235a06872671007b0f5d37d510293e7
