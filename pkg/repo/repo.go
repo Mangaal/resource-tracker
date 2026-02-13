@@ -115,6 +115,29 @@ func (r *RepoServerManager) GetApplicationChildManifests(ctx context.Context, ap
 	if err != nil {
 		return nil, fmt.Errorf("error getting ref sources: %w", err)
 	}
+	// Resolve destination cluster to get the real kube version
+	var kubeVersion string
+	var apiVersions []string
+	dest := application.Spec.Destination
+	if dest.Server != "" || dest.Name != "" {
+		server := dest.Server
+		if server == "" && dest.Name != "" {
+			servers, err := r.db.GetClusterServersByName(ctx, dest.Name)
+			if err == nil && len(servers) > 0 {
+				server = servers[0]
+			}
+		}
+		if server != "" {
+			cluster, err := r.db.GetCluster(ctx, server)
+			if err == nil {
+				kubeVersion = cluster.Info.ServerVersion
+				if kubeVersion == "" {
+					kubeVersion = cluster.ServerVersion
+				}
+				apiVersions = cluster.Info.APIVersions
+			}
+		}
+	}
 	targetObjs := make([]*unstructured.Unstructured, 0)
 	for i, source := range sources {
 		repo, err := r.db.GetRepository(ctx, source.RepoURL, proj.Name)
@@ -133,6 +156,8 @@ func (r *RepoServerManager) GetApplicationChildManifests(ctx context.Context, ap
 			ApplicationSource:  &source,
 			EnabledSourceTypes: enabledSourceTypes,
 			KustomizeOptions:   kustomizeOptions,
+			KubeVersion:        kubeVersion,
+			ApiVersions:        apiVersions,
 			HelmRepoCreds:      permittedHelmCredentials,
 			HasMultipleSources: application.Spec.HasMultipleSources(),
 			RefSources:         refSources,
