@@ -131,9 +131,6 @@ func (r *RepoServerManager) GetApplicationChildManifests(ctx context.Context, ap
 			cluster, err := r.db.GetCluster(ctx, server)
 			if err == nil {
 				kubeVersion = cluster.Info.ServerVersion
-				if kubeVersion == "" {
-					kubeVersion = cluster.ServerVersion
-				}
 				apiVersions = cluster.Info.APIVersions
 			}
 		}
