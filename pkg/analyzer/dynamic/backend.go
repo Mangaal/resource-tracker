@@ -199,9 +199,7 @@ func analyzeWithDynamicTracker(
 				rt.CacheMu.RUnlock()
 				if len(stillMissingKeys) > 0 {
 					appLogger.WithFields(log.Fields{
-						"cluster":          server,
-						"missingResources": stillMissingKeys,
-						"count":            len(stillMissingKeys),
+						"cluster": server,
 					}).Info("Syncing cache for missing resources")
 					rt.EnsureSyncedSharedCacheOnHost(ctx, server)
 					// Add direct resources as leaf nodes (empty children set) if they're still not in cache
