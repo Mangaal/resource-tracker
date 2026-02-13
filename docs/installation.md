@@ -22,27 +22,19 @@ The binary will be available at `dist/argocd-resource-tracker`.
 
 **Basic usage (default: dynamic strategy):**
 ```shell
-argocd-resource-tracker analyze --app argocd/my-app --loglevel info
-```
-
-**With custom namespace:**
-```shell
-argocd-resource-tracker analyze \
-  --app production/my-app \
-  --namespace argocd \
-  --loglevel debug
+argocd-resource-tracker analyze --app argocd/my-app
 ```
 
 ### Analyze All Applications
 
 ```shell
-argocd-resource-tracker analyze --all-apps --namespace argocd --loglevel info
+argocd-resource-tracker analyze --all-apps --namespace argocd
 ```
 
 ### Using Graph Strategy
 
 ```shell
-argocd-resource-tracker analyze --app argocd/my-app --strategy graph --loglevel info
+argocd-resource-tracker analyze --app argocd/my-app --strategy graph
 ```
 
 ### Output Format
